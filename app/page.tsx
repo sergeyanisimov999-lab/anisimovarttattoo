@@ -1,65 +1,132 @@
-import Image from "next/image";
+// app/page.tsx
+import Link from "next/link";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-black text-zinc-100">
+      <div className="max-w-6xl mx-auto px-4 pt-10 pb-16 flex flex-col">
+        {/* Логотип + крупная надпись ANISIMOVARTTATTOO по центру */}
+        <div className="flex flex-col items-center text-center mb-10 md:mb-14">
+          <img
+            src="/logo/anisimovarttattoo-logo.png"
+            alt="Логотип Anisimovarttattoo"
+            className="h-32 sm:h-40 md:h-48 w-auto mb-4"
+          />
+          <p className="text-lg sm:text-2xl md:text-3xl tracking-[0.7em] uppercase text-zinc-500">
+            ANISIMOVARTTATTOO
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {/* Основной блок: слева текст, справа фото */}
+        <section className="grid gap-10 lg:gap-16 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+          {/* Левая колонка: слоган, текст, кнопки */}
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-wide">
+                Искусство, которое становится
+                <br />
+                частью тебя...
+              </h1>
+              <p className="text-base sm:text-lg text-zinc-400 max-w-xl">
+                Премиальные тату в артхаус-эстетике: чистые линии, продуманная
+                композиция и уважение к телу. Атмосфера личного салона, а не
+                поточной студии.
+              </p>
+            </div>
+
+            {/* Кнопки действий */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              {/* Записаться → форма на /booking */}
+              <Link
+                href="/booking"
+                className="rounded-full px-8 py-2.5 text-sm font-medium tracking-wide
+                           bg-zinc-100 text-black border border-zinc-100
+                           hover:bg-white hover:border-white hover:text-black
+                           transition"
+              >
+                Записаться
+              </Link>
+
+              {/* Отзывы */}
+              <Link
+                href="/reviews"
+                className="rounded-full px-8 py-2.5 text-sm font-medium tracking-wide
+                           border border-zinc-700 bg-black
+                           text-зinc-200 hover:border-zinc-300 hover:text-zinc-50
+                           transition"
+              >
+                Отзывы
+              </Link>
+
+              {/* Примерка тату онлайн */}
+              <Link
+                href="/tryon"
+                className="rounded-full px-8 py-2.5 text-sm font-medium tracking-wide
+                           border border-zinc-500/80 bg-zinc-950
+                           text-zinc-100 hover:border-zinc-200
+                           hover:text-zinc-50 hover:bg-zinc-900
+                           transition whitespace-nowrap"
+              >
+                Примерка тату онлайн
+              </Link>
+
+              {/* Портфолио */}
+              <Link
+                href="/gallery"
+                className="rounded-full px-7 py-2.5 text-sm font-medium tracking-wide
+                           border border-zinc-800 bg-black
+                           text-zinc-300 hover:border-zinc-400 hover:text-zinc-50
+                           transition"
+              >
+                Портфолио
+              </Link>
+
+              {/* Эскизы месяца −30% */}
+              <Link
+                href="/sketches"
+                className="rounded-full px-7 py-2.5 text-sm font-medium tracking-wide
+                           border border-zinc-900 bg-black
+                           text-zinc-400 hover:border-zinc-400 hover:text-zinc-50
+                           transition"
+              >
+                Эскизы месяца −30%
+              </Link>
+            </div>
+
+            {/* Текст под кнопками */}
+            <p className="text-sm sm:text-base text-zinc-500 pt-4 max-w-md">
+              Индивидуальные сеансы по предварительной записи. Перед тату —
+              онлайн-примерка, подбор эскиза и финальная композиция.
+            </p>
+          </div>
+
+          {/* Правая колонка: фото без рамки, подпись под фото */}
+          <div className="flex justify-center lg:justify-end lg:mt-2">
+            <div className="w-full max-w-[320px] sm:max-w-[360px]">
+              {/* Карточка с фото */}
+              <div className="relative rounded-[32px] bg-gradient-to-b from-zinc-950 via-black to-zinc-950/90 overflow-hidden shadow-[0_0_70px_rgba(0,0,0,0.9)]">
+                <div className="relative aspect-[3/4]">
+                  <img
+                    src="/artist/sergey-main.png"
+                    alt="Сергей Анисимов"
+                    className="h-full w-full object-cover"
+                  />
+                  {/* Лёгкий градиент по низу, чтобы фото мягко уходило в чёрный */}
+                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Подпись под фото */}
+              <div className="mt-3">
+                <p className="text-sm sm:text-base text-zinc-300">
+                  Авторские эскизы, внимание к деталям и честный диалог перед
+                  сеансом. Без случайных решений.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
