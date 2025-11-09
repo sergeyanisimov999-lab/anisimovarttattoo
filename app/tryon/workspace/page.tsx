@@ -6,6 +6,7 @@ import React, {
   ChangeEvent,
   useRef,
   PointerEvent as ReactPointerEvent,
+  TouchEvent as ReactTouchEvent,
   CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -24,6 +25,13 @@ const blendOptions: { value: CSSProperties["mixBlendMode"]; label: string }[] =
     { value: "soft-light", label: "Soft light" },
     { value: "screen", label: "Screen" },
   ];
+
+const MIN_SCALE = 0.05;
+const MAX_SCALE = 1.6;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
 
 const WorkspacePage = () => {
   const router = useRouter();
@@ -47,6 +55,15 @@ const WorkspacePage = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const dragStartRef = useRef<Position | null>(null);
   const initialPosRef = useRef<Position>({ x: 0, y: 0 });
+
+  // состояние для пинча / вращения двумя пальцами
+  const pinchState = useRef({
+    isPinching: false,
+    initialDistance: 0,
+    initialScale: 1,
+    initialAngle: 0,
+    initialRotation: 0,
+  });
 
   // если нет картинок — уводим назад
   if (!bodyPreview || !sketchPreview) {
@@ -78,7 +95,7 @@ const WorkspacePage = () => {
     setOpacity(parseFloat(e.target.value));
 
   const handleScaleChange = (e: ChangeEvent<HTMLInputElement>) =>
-    setScale(parseFloat(e.target.value));
+    setScale(clamp(parseFloat(e.target.value), MIN_SCALE, MAX_SCALE));
 
   const handleRotationChange = (e: ChangeEvent<HTMLInputElement>) =>
     setRotation(parseFloat(e.target.value));
@@ -95,7 +112,7 @@ const WorkspacePage = () => {
     setTopLayer((prev) => (prev === "sketch" ? "body" : "sketch"));
   };
 
-  // === перетаскивание верхнего слоя (мышь + палец) ===
+  // === ПЕРЕТАСКИВАНИЕ верхнего слоя (мышь + один палец через Pointer Events) ===
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -106,6 +123,8 @@ const WorkspacePage = () => {
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    // если сейчас идёт пинч двумя пальцами — мышиное/одно-пальцевое перетаскивание игнорируем
+    if (pinchState.current.isPinching) return;
     if (!isDragging || !dragStartRef.current) return;
 
     const dx = e.clientX - dragStartRef.current.x;
@@ -123,6 +142,67 @@ const WorkspacePage = () => {
     }
     setIsDragging(false);
     dragStartRef.current = null;
+  };
+
+  // === ЖЕСТЫ ДВУМЯ ПАЛЬЦАМИ (пинч + вращение) через Touch Events ===
+
+  const getTouchDistanceAndAngle = (touches: React.TouchList) => {
+    const [t1, t2] = [touches[0], touches[1]];
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+    const distance = Math.hypot(dx, dy);
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    return { distance, angle };
+  };
+
+  const handleTouchStart = (e: ReactTouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      // начинаем пинч
+      const { distance, angle } = getTouchDistanceAndAngle(e.touches);
+      pinchState.current.isPinching = true;
+      pinchState.current.initialDistance = distance;
+      pinchState.current.initialScale = scale;
+      pinchState.current.initialAngle = angle;
+      pinchState.current.initialRotation = rotation;
+
+      // во время пинча перетаскивание выключаем
+      setIsDragging(false);
+      dragStartRef.current = null;
+    }
+  };
+
+  const handleTouchMove = (e: ReactTouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2 && pinchState.current.isPinching) {
+      e.preventDefault(); // чтобы страница не скроллилась при жесте
+
+      const { distance, angle } = getTouchDistanceAndAngle(e.touches);
+
+      // масштаб
+      const ratio =
+        distance / (pinchState.current.initialDistance || distance || 1);
+      const nextScale = clamp(
+        pinchState.current.initialScale * ratio,
+        MIN_SCALE,
+        MAX_SCALE
+      );
+      setScale(nextScale);
+
+      // вращение
+      const deltaAngle = angle - pinchState.current.initialAngle;
+      let nextRotation =
+        pinchState.current.initialRotation + deltaAngle;
+
+      // нормализуем к 0–360
+      nextRotation = ((nextRotation % 360) + 360) % 360;
+      setRotation(nextRotation);
+    }
+  };
+
+  const handleTouchEnd = (e: ReactTouchEvent<HTMLDivElement>) => {
+    if (e.touches.length < 2) {
+      // пинч закончился
+      pinchState.current.isPinching = false;
+    }
   };
 
   return (
@@ -189,6 +269,9 @@ const WorkspacePage = () => {
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
                   onPointerLeave={handlePointerUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                 >
                   <img
                     src={topSrc}
@@ -209,14 +292,14 @@ const WorkspacePage = () => {
             </div>
 
             <p className="text-[11px] text-zinc-500 max-w-md pt-1">
-              Верхний слой можно двигать мышью или пальцем, менять масштаб,
-              прозрачность и угол. Финальное расположение тату уточняется лично
-              перед сеансом.
+              Верхний слой можно двигать мышью или пальцем, масштабировать
+              пинч-жестом и поворачивать двумя пальцами. Финальное расположение
+              тату уточняется лично перед сеансом.
             </p>
           </div>
 
           {/* Панель управления */}
-          <div className="space-y-6 lg:space-y-7 bg-gradient-to-b from-zinc-950/90 to-black/90 border border-zinc-800/80 rounded-3xl p-5 sm:p-6 shadow-[0_0_50px_rgba(0,0,0,0.95)]">
+          <div className="space-y-6 lg:space-y-7 bg-gradient-to-b from-zinc-950/90 to-black/90 border border-зinc-800/80 rounded-3xl p-5 sm:p-6 shadow-[0_0_50px_rgba(0,0,0,0.95)]">
             <h2 className="text-sm font-medium tracking-[0.18em] uppercase text-zinc-400">
               Панель управления
             </h2>
@@ -254,8 +337,8 @@ const WorkspacePage = () => {
               </div>
               <input
                 type="range"
-                min={0.05}
-                max={1.6}
+                min={MIN_SCALE}
+                max={MAX_SCALE}
                 step={0.01}
                 value={scale}
                 onChange={handleScaleChange}
