@@ -1,150 +1,135 @@
 // app/api/booking/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
 import path from "path";
+import fs from "fs/promises";
 
 export const runtime = "nodejs";
-
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const CHAT_ID_MAIN = process.env.TELEGRAM_CHAT_ID_MAIN;
-const CHAT_ID_SECOND = process.env.TELEGRAM_CHAT_ID_SECOND;
-
-// Папка для сохранения заявок и файлов
-const submissionsDir = path.join(process.cwd(), "booking_submissions");
-
-if (!fs.existsSync(submissionsDir)) {
-  fs.mkdirSync(submissionsDir, { recursive: true });
-}
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
 
-    const name = String(formData.get("name") || "").trim();
-    const phone = String(formData.get("phone") || "").trim();
-    const notes = String(formData.get("notes") || "").trim();
-    const attachment = formData.get("attachment") as File | null;
+    const name = ((formData.get("name") as string) || "").trim();
+    const phone = ((formData.get("phone") as string) || "").trim();
+    const description = ((formData.get("description") as string) || "").trim();
+    const file = formData.get("attachment") as File | null;
 
-    const timestamp = new Date().toISOString().replace(/:/g, "-");
-    let savedFileName: string | null = null;
+    // ---------- 1. Локальное сохранение (только если НЕ Vercel) ----------
+    if (!process.env.VERCEL) {
+      const baseDir = path.join(process.cwd(), "booking_submissions");
+      const now = new Date().toISOString().replace(/[:.]/g, "-");
 
-    // 1) Сохраняем файл, если он есть
-    if (attachment && attachment.size > 0) {
-      const origName = attachment.name || "attachment";
-      const safeName = origName.replace(/[^\w.\-а-яА-Я]/g, "_");
-      const fileName = `file-${timestamp}-${safeName}`;
-      const filePath = path.join(submissionsDir, fileName);
+      await fs.mkdir(baseDir, { recursive: true });
 
-      const bytes = Buffer.from(await attachment.arrayBuffer());
-      fs.writeFileSync(filePath, bytes);
-
-      savedFileName = fileName;
-    }
-
-    // 2) Сохраняем JSON с заявкой
-    const jsonName = `request-${timestamp}.json`;
-    const jsonPath = path.join(submissionsDir, jsonName);
-
-    const payload = {
-      timestamp,
-      name,
-      phone,
-      notes,
-      attachment: savedFileName,
-    };
-
-    fs.writeFileSync(jsonPath, JSON.stringify(payload, null, 2), "utf-8");
-
-    // 3) Отправляем уведомление в Telegram
-    if (!BOT_TOKEN || !CHAT_ID_MAIN || !CHAT_ID_SECOND) {
-      console.warn(
-        "TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID_* не заданы. Уведомление в Telegram не отправлено."
+      // Сохраняем JSON с текстовыми полями
+      const jsonPath = path.join(baseDir, `request-${now}.json`);
+      await fs.writeFile(
+        jsonPath,
+        JSON.stringify(
+          {
+            createdAt: new Date().toISOString(),
+            name,
+            phone,
+            description,
+          },
+          null,
+          2
+        ),
+        "utf-8"
       );
-    } else {
-      const baseTextUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-      const baseFileUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`;
 
-      const textLines = [
-        "🆕 <b>Новый заказ</b>",
-        "",
-        `<b>Имя:</b> ${name || "—"}`,
-        `<b>Телефон:</b> ${phone || "—"}`,
-        "",
-        `<b>Описание:</b>`,
-        notes || "—",
-        "",
-        savedFileName
-          ? `<b>Файл:</b> сохранён в папке booking_submissions как <code>${savedFileName}</code>`
-          : `<b>Файл:</b> не прикреплён`,
-      ];
-
-      const message = textLines.join("\n");
-
-      // ---------- 3.1. Текст в оба аккаунта ----------
-      const res1 = await fetch(baseTextUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: CHAT_ID_MAIN,
-          text: message,
-          parse_mode: "HTML",
-        }),
-      });
-      const data1 = await res1.json();
-      console.log("Telegram MAIN response:", data1);
-
-      const res2 = await fetch(baseTextUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: CHAT_ID_SECOND,
-          text: message,
-          parse_mode: "HTML",
-        }),
-      });
-      const data2 = await res2.json();
-      console.log("Telegram SECOND response:", data2);
-
-      // ---------- 3.2. Если есть файл — отправляем как документ ----------
-      if (savedFileName) {
-        const fullFilePath = path.join(submissionsDir, savedFileName);
-        try {
-          const fileBuffer = fs.readFileSync(fullFilePath);
-
-          const caption = "📎 Приложенный файл к заявке";
-
-          // Функция отправки документа в один чат
-          const sendDocToChat = async (chatId: string | undefined) => {
-            if (!chatId) return;
-
-            const form = new FormData();
-            form.append("chat_id", chatId);
-            form.append("caption", caption);
-            form.append("document", new Blob([fileBuffer]), savedFileName);
-
-            const res = await fetch(baseFileUrl, {
-              method: "POST",
-              body: form as any,
-            });
-
-            const data = await res.json();
-            console.log(`Telegram document response for chat ${chatId}:`, data);
-          };
-
-          await sendDocToChat(CHAT_ID_MAIN);
-          await sendDocToChat(CHAT_ID_SECOND);
-        } catch (fileErr) {
-          console.error("Не удалось отправить файл в Telegram:", fileErr);
-        }
+      // Сохраняем файл, если есть
+      if (file && file.size > 0) {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const safeName = file.name || "attachment";
+        const filePath = path.join(baseDir, `${now}-${safeName}`);
+        await fs.writeFile(filePath, buffer);
       }
     }
 
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    console.error("Ошибка в /api/booking:", e);
-    return NextResponse.json(
-      { ok: false, error: "Ошибка сервера при обработке заявки" },
-      { status: 500 }
+    // ---------- 2. Подготовка Telegram ----------
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const mainId = process.env.TELEGRAM_CHAT_ID_MAIN;
+    const secondId = process.env.TELEGRAM_CHAT_ID_SECOND;
+
+    const chatIds = [mainId, secondId].filter(Boolean) as string[];
+
+    if (!token || chatIds.length === 0) {
+      console.error("Telegram env missing", {
+        hasToken: !!token,
+        chatIds,
+      });
+      return NextResponse.json(
+        { ok: false, error: "Telegram env vars missing" },
+        { status: 500 }
+      );
+    }
+
+    const apiBase = `https://api.telegram.org/bot${token}`;
+
+    const textLines = [
+      "✨ Новый заказ тату",
+      "",
+      `👤 Имя: ${name || "не указано"}`,
+      `📞 Телефон: ${phone || "не указан"}`,
+      "",
+      `💬 Пожелания: ${description || "не указаны"}`,
+    ];
+    const text = textLines.join("\n");
+
+    // ---------- 3. Готовим файл для Телеги, если есть ----------
+    let fileBlob: Blob | null = null;
+    let fileFilename = "attachment.jpg";
+
+    if (file && file.size > 0) {
+      const arrayBuffer = await file.arrayBuffer();
+      fileBlob = new Blob([arrayBuffer], {
+        type: file.type || "application/octet-stream",
+      });
+      fileFilename = file.name || fileFilename;
+    }
+
+    // ---------- 4. Отправка в Telegram ----------
+    await Promise.all(
+      chatIds.map(async (chatId) => {
+        // Сначала текст
+        const msgResp = await fetch(`${apiBase}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text,
+          }),
+        });
+
+        const msgData = await msgResp.json();
+        if (!msgData.ok) {
+          console.error("Telegram sendMessage error", chatId, msgData);
+        }
+
+        // Потом фото, если есть
+        if (fileBlob) {
+          const fd = new FormData();
+          fd.append("chat_id", chatId);
+          fd.append("photo", fileBlob, fileFilename);
+
+          const photoResp = await fetch(`${apiBase}/sendPhoto`, {
+            method: "POST",
+            body: fd,
+          });
+
+          const photoData = await photoResp.json();
+          if (!photoData.ok) {
+            console.error("Telegram sendPhoto error", chatId, photoData);
+          }
+        }
+      })
     );
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Ошибка в /api/booking:", err);
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
