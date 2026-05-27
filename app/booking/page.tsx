@@ -93,7 +93,7 @@ export default function BookingPage() {
               Кратко о желаемой тату
             </label>
             <textarea
-              name="notes"
+              name="description"
               required
               rows={4}
               placeholder="Зона на теле, стиль, примерный размер, важные детали..."

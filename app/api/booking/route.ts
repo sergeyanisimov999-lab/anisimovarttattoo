@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
     const name = ((formData.get("name") as string) || "").trim();
     const phone = ((formData.get("phone") as string) || "").trim();
-    const description = ((formData.get("description") as string) || "").trim();
+    const description = (((formData.get("description") || formData.get("notes")) as string) || "").trim();
     const file = formData.get("attachment") as File | null;
 
     // ---------- 1. Локальное сохранение (только если НЕ Vercel) ----------

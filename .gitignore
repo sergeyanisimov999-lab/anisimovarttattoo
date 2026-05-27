@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local booking requests / uploaded client files
+/booking_submissions/
+booking_submissions/
