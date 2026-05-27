@@ -96,7 +96,8 @@ export default function HomePage() {
             {/* Текст под кнопками */}
             <p className="text-sm sm:text-base text-zinc-500 pt-4 max-w-md">
               Индивидуальные сеансы по предварительной записи. Перед тату —
-              онлайн-примерка, подбор эскиза и финальная композиция. г.Москва
+              онлайн-примерка, подбор эскиза и финальная композиция. Москва,
+              район Перово / ВАО.
             </p>
           </div>
 
@@ -122,6 +123,109 @@ export default function HomePage() {
                   Авторские эскизы, внимание к деталям и честный диалог перед
                   сеансом. Без случайных решений.
                 </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Видимый локальный блок: полезен клиенту и поиску, без скрытых SEO-текстов */}
+        <section
+          className="mt-16 md:mt-24 border-t border-zinc-900 pt-10 md:pt-14"
+          aria-labelledby="tattoo-master-perovo-heading"
+        >
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="space-y-5">
+              <p className="text-xs uppercase tracking-[0.32em] text-zinc-500">
+                Москва · Перово · ВАО
+              </p>
+              <h2
+                id="tattoo-master-perovo-heading"
+                className="text-2xl sm:text-3xl font-semibold tracking-wide"
+              >
+                Тату-мастер Сергей Анисимов в Перово
+              </h2>
+              <p className="text-sm sm:text-base leading-relaxed text-zinc-400 max-w-2xl">
+                Художественные татуировки, крупные black&amp;grey-композиции,
+                индивидуальные эскизы, перекрытие и доработка старых работ.
+                Приём проходит только по предварительной записи — сначала
+                обсуждаем идею, место на теле и задачу по композиции.
+              </p>
+              <p className="text-sm sm:text-base leading-relaxed text-zinc-300">
+                Адрес приёма:{" "}
+                <span className="text-zinc-100">Москва, ул. Металлургов, д. 3</span>.
+                Точный порядок встречи сообщаю после подтверждения записи.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Link
+                  href="/tatu-master-perovo"
+                  className="rounded-full border border-zinc-600 px-6 py-2.5 text-sm text-zinc-100 hover:border-zinc-200 transition"
+                >
+                  Тату в Перово
+                </Link>
+                <a
+                  href="tel:+79779286477"
+                  className="rounded-full border border-zinc-800 px-6 py-2.5 text-sm text-zinc-300 hover:border-zinc-400 hover:text-zinc-50 transition"
+                >
+                  +7 977 928-64-77
+                </a>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="rounded-2xl border border-zinc-900 bg-zinc-950/40 p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                  Направления
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+                  Black&amp;grey, графика, крупные композиции на руку, плечо и
+                  грудь, авторские проекты.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-zinc-900 bg-zinc-950/40 p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                  Доверие
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+                  Портфолио работ и публичные отзывы клиентов доступны до
+                  записи. Консультация — без случайных решений.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 overflow-hidden rounded-[28px] border border-amber-200/25 bg-gradient-to-br from-zinc-950 via-black to-amber-950/20 p-6 sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_auto] lg:items-center">
+              <div className="space-y-3">
+                <p className="text-xs uppercase tracking-[0.32em] text-amber-200/70">
+                  Full day · 6 часов · 25 000 ₽
+                </p>
+                <h3 className="text-xl sm:text-2xl font-semibold tracking-wide text-zinc-100">
+                  Комфорт+ домой — за мой счёт
+                </h3>
+                <p className="text-sm sm:text-base leading-relaxed text-zinc-300 max-w-2xl">
+                  После длинного сеанса не нужно ехать в метро или искать
+                  машину: при записи на full-day сеанс отвезу домой с
+                  комфортом.
+                </p>
+                <p className="text-xs sm:text-sm leading-relaxed text-zinc-500 max-w-2xl">
+                  Одна поездка после сеанса. Москва и ближайшее Подмосковье —
+                  до 15 км за МКАД. Маршрут согласовывается заранее; денежная
+                  замена подарка не предусмотрена.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 lg:flex-col lg:items-stretch">
+                <Link
+                  href="/booking"
+                  className="rounded-full bg-zinc-100 px-6 py-2.5 text-center text-sm font-medium text-black hover:bg-white transition"
+                >
+                  Записаться на full-day
+                </Link>
+                <Link
+                  href="/tatu-master-perovo#full-day"
+                  className="rounded-full border border-zinc-700 px-6 py-2.5 text-center text-sm text-zinc-100 hover:border-zinc-300 transition"
+                >
+                  Условия
+                </Link>
               </div>
             </div>
           </div>
