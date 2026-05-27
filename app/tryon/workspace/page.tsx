@@ -212,7 +212,7 @@ const WorkspacePage = () => {
         <header className="flex items-center justify-between gap-4 mb-10">
           <div className="flex items-center gap-3">
             <img
-              src="/logo/logo-dark.png"
+              src="/logo/anisimovarttattoo-logo.png"
               alt="Anisimovarttattoo"
               className="h-10 w-auto"
             />
@@ -226,12 +226,21 @@ const WorkspacePage = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => router.push("/tryon")}
-            className="text-xs sm:text-sm rounded-full border border-zinc-700 px-4 py-1.5 hover:border-zinc-300 hover:text-zinc-50 transition"
-          >
-            Назад к загрузке
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/"
+              className="text-xs sm:text-sm rounded-full border border-zinc-700 px-4 py-1.5 hover:border-zinc-300 hover:text-zinc-50 transition"
+            >
+              На главную
+            </a>
+            <button
+              type="button"
+              onClick={() => router.push("/tryon")}
+              className="text-xs sm:text-sm rounded-full border border-zinc-700 px-4 py-1.5 hover:border-zinc-300 hover:text-zinc-50 transition"
+            >
+              Назад к загрузке
+            </button>
+          </div>
         </header>
 
         <section className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">

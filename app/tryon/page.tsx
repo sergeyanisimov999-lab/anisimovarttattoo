@@ -50,7 +50,7 @@ const TryOnUploadPage = () => {
         <header className="flex items-center justify-between gap-4 mb-12">
   <div className="flex items-center gap-4">
     <img
-      src="/logo/logo-dark.png"
+      src="/logo/anisimovarttattoo-logo.png"
       alt="Anisimovarttattoo"
       className="h-11 w-auto"
     />
@@ -63,6 +63,12 @@ const TryOnUploadPage = () => {
       </p>
     </div>
   </div>
+  <a
+    href="/"
+    className="text-xs sm:text-sm rounded-full border border-zinc-700 px-4 py-1.5 hover:border-zinc-300 hover:text-zinc-50 transition"
+  >
+    На главную
+  </a>
 </header>
 
 
