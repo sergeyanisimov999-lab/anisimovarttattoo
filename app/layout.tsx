@@ -1,6 +1,7 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import React from "react";
+import AnalyticsConsent from "./components/AnalyticsConsent";
 import "./globals.css";
 
 const siteUrl = "https://anisimovarttattoo.vercel.app";
@@ -123,6 +124,7 @@ export default function RootLayout({
     <html lang="ru">
       <body className="min-h-screen bg-black text-zinc-100 antialiased">
         {children}
+        <AnalyticsConsent />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

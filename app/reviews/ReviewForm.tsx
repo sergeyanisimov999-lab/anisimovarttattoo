@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { sendAnalyticsEvent } from "../components/AnalyticsConsent";
 
 export default function ReviewForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +24,7 @@ export default function ReviewForm() {
 
       if (!response.ok) throw new Error("Не удалось отправить отзыв");
 
+      sendAnalyticsEvent("submit_review", { form_name: "review" });
       setStatus("success");
       form.reset();
     } catch (error) {

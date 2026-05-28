@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { sendAnalyticsEvent } from "../components/AnalyticsConsent";
 
 export default function BookingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +24,7 @@ export default function BookingPage() {
 
       if (!response.ok) throw new Error("Ошибка отправки");
 
+      sendAnalyticsEvent("generate_lead", { form_name: "booking" });
       setStatus("success");
       form.reset();
     } catch (error) {
