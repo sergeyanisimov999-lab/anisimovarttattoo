@@ -1,36 +1,72 @@
-// app/api/booking/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
 
 export const runtime = "nodejs";
 
+function clean(value: FormDataEntryValue | null, maxLength: number) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
 
-    const name = ((formData.get("name") as string) || "").trim();
-    const phone = ((formData.get("phone") as string) || "").trim();
-    const description = (((formData.get("description") || formData.get("notes")) as string) || "").trim();
+    if (clean(formData.get("company"), 200)) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const name = clean(formData.get("name"), 80);
+    const phone = clean(formData.get("phone"), 30);
+    const projectType = clean(formData.get("projectType"), 100);
+    const bodyArea = clean(formData.get("bodyArea"), 100);
+    const approxSize = clean(formData.get("approxSize"), 100);
+    const budget = clean(formData.get("budget"), 100);
+    const multipleSessions = clean(formData.get("multipleSessions"), 120);
+    const description = clean(formData.get("description") || formData.get("notes"), 2000);
+    const dataConsent = formData.get("dataConsent") === "yes";
     const file = formData.get("attachment") as File | null;
 
-    // ---------- 1. Локальное сохранение (только если НЕ Vercel) ----------
+    if (
+      !name ||
+      !phone ||
+      !projectType ||
+      !bodyArea ||
+      !approxSize ||
+      !budget ||
+      !multipleSessions ||
+      !description ||
+      !dataConsent
+    ) {
+      return NextResponse.json({ ok: false, error: "Invalid booking form" }, { status: 400 });
+    }
+
+    if (file && file.size > 0) {
+      const acceptedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+      if (!acceptedTypes.has(file.type) || file.size > 10 * 1024 * 1024) {
+        return NextResponse.json({ ok: false, error: "Unsupported attachment" }, { status: 400 });
+      }
+    }
+
     if (!process.env.VERCEL) {
       const baseDir = path.join(process.cwd(), "booking_submissions");
       const now = new Date().toISOString().replace(/[:.]/g, "-");
 
       await fs.mkdir(baseDir, { recursive: true });
-
-      // Сохраняем JSON с текстовыми полями
-      const jsonPath = path.join(baseDir, `request-${now}.json`);
       await fs.writeFile(
-        jsonPath,
+        path.join(baseDir, `request-${now}.json`),
         JSON.stringify(
           {
             createdAt: new Date().toISOString(),
             name,
             phone,
+            projectType,
+            bodyArea,
+            approxSize,
+            budget,
+            multipleSessions,
             description,
+            dataConsent,
           },
           null,
           2
@@ -38,98 +74,84 @@ export async function POST(req: NextRequest) {
         "utf-8"
       );
 
-      // Сохраняем файл, если есть
       if (file && file.size > 0) {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const safeName = file.name || "attachment";
-        const filePath = path.join(baseDir, `${now}-${safeName}`);
-        await fs.writeFile(filePath, buffer);
+        const safeName = (file.name || "attachment.jpg").replace(/[^\p{L}\p{N}._-]+/gu, "_");
+        const buffer = Buffer.from(await file.arrayBuffer());
+        await fs.writeFile(path.join(baseDir, `${now}-${safeName}`), buffer);
       }
     }
 
-    // ---------- 2. Подготовка Telegram ----------
     const token = process.env.TELEGRAM_BOT_TOKEN;
-    const mainId = process.env.TELEGRAM_CHAT_ID_MAIN;
-    const secondId = process.env.TELEGRAM_CHAT_ID_SECOND;
-
-    const chatIds = [mainId, secondId].filter(Boolean) as string[];
+    const chatIds = [
+      process.env.TELEGRAM_CHAT_ID_MAIN,
+      process.env.TELEGRAM_CHAT_ID_SECOND,
+    ].filter(Boolean) as string[];
 
     if (!token || chatIds.length === 0) {
-      console.error("Telegram env missing", {
-        hasToken: !!token,
-        chatIds,
-      });
-      return NextResponse.json(
-        { ok: false, error: "Telegram env vars missing" },
-        { status: 500 }
-      );
+      console.error("Telegram env missing for booking form");
+      return NextResponse.json({ ok: false, error: "Notification unavailable" }, { status: 500 });
     }
+
+    const text = [
+      "✨ Новая заявка на тату",
+      "",
+      `👤 Имя: ${name}`,
+      `📞 Телефон: ${phone}`,
+      `🎨 Тип работы: ${projectType}`,
+      `📍 Зона: ${bodyArea}`,
+      `📐 Размер: ${approxSize}`,
+      `💰 Бюджет: ${budget}`,
+      `🗓 Несколько сеансов: ${multipleSessions}`,
+      "",
+      `💬 Идея: ${description}`,
+      "",
+      "✅ Согласие на обработку данных: да",
+    ].join("\n");
 
     const apiBase = `https://api.telegram.org/bot${token}`;
 
-    const textLines = [
-      "✨ Новый заказ тату",
-      "",
-      `👤 Имя: ${name || "не указано"}`,
-      `📞 Телефон: ${phone || "не указан"}`,
-      "",
-      `💬 Пожелания: ${description || "не указаны"}`,
-    ];
-    const text = textLines.join("\n");
-
-    // ---------- 3. Готовим файл для Телеги, если есть ----------
     let fileBlob: Blob | null = null;
-    let fileFilename = "attachment.jpg";
-
+    let fileName = "attachment.jpg";
     if (file && file.size > 0) {
-      const arrayBuffer = await file.arrayBuffer();
-      fileBlob = new Blob([arrayBuffer], {
-        type: file.type || "application/octet-stream",
-      });
-      fileFilename = file.name || fileFilename;
+      fileBlob = new Blob([await file.arrayBuffer()], { type: file.type });
+      fileName = file.name || fileName;
     }
 
-    // ---------- 4. Отправка в Telegram ----------
-    await Promise.all(
+    const deliveryResults = await Promise.all(
       chatIds.map(async (chatId) => {
-        // Сначала текст
-        const msgResp = await fetch(`${apiBase}/sendMessage`, {
+        const messageResponse = await fetch(`${apiBase}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text,
-          }),
+          body: JSON.stringify({ chat_id: chatId, text }),
         });
+        const messageResult = await messageResponse.json();
 
-        const msgData = await msgResp.json();
-        if (!msgData.ok) {
-          console.error("Telegram sendMessage error", chatId, msgData);
-        }
+        if (!messageResult.ok) return false;
 
-        // Потом фото, если есть
         if (fileBlob) {
-          const fd = new FormData();
-          fd.append("chat_id", chatId);
-          fd.append("photo", fileBlob, fileFilename);
+          const upload = new FormData();
+          upload.append("chat_id", chatId);
+          upload.append("photo", fileBlob, fileName);
 
-          const photoResp = await fetch(`${apiBase}/sendPhoto`, {
+          const photoResponse = await fetch(`${apiBase}/sendPhoto`, {
             method: "POST",
-            body: fd,
+            body: upload,
           });
-
-          const photoData = await photoResp.json();
-          if (!photoData.ok) {
-            console.error("Telegram sendPhoto error", chatId, photoData);
-          }
+          const photoResult = await photoResponse.json();
+          if (!photoResult.ok) return false;
         }
+
+        return true;
       })
     );
 
+    if (deliveryResults.some((delivered) => !delivered)) {
+      return NextResponse.json({ ok: false, error: "Telegram notification failed" }, { status: 502 });
+    }
+
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("Ошибка в /api/booking:", err);
+  } catch (error) {
+    console.error("Ошибка в /api/booking:", error);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
