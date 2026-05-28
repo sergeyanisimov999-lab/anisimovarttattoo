@@ -53,6 +53,7 @@ export function sendAnalyticsEvent(
 export default function AnalyticsConsent() {
   const [ready, setReady] = useState(false);
   const [consent, setConsent] = useState<ConsentState>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     const savedConsent = window.localStorage.getItem(CONSENT_STORAGE_KEY);
@@ -93,6 +94,7 @@ export default function AnalyticsConsent() {
   function chooseConsent(nextConsent: Exclude<ConsentState, null>) {
     window.localStorage.setItem(CONSENT_STORAGE_KEY, nextConsent);
     setConsent(nextConsent);
+    setSettingsOpen(false);
 
     if (nextConsent === "denied") {
       const analyticsWindow = getAnalyticsWindow();
@@ -113,7 +115,7 @@ export default function AnalyticsConsent() {
 
   if (!ready) return null;
 
-  if (consent !== null) {
+  if (consent !== null && !settingsOpen) {
     return (
       <button
         type="button"
