@@ -23,8 +23,8 @@ function loadAnalytics(): void {
 
   const analyticsWindow = getAnalyticsWindow();
   analyticsWindow.dataLayer = analyticsWindow.dataLayer || [];
-  analyticsWindow.gtag = (...args: unknown[]) => {
-    analyticsWindow.dataLayer?.push(args);
+  analyticsWindow.gtag = function gtag() {
+    analyticsWindow.dataLayer?.push(arguments);
   };
 
   analyticsWindow.gtag("js", new Date());
